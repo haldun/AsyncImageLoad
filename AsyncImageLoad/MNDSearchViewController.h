@@ -1,5 +1,5 @@
 //
-//  MNDViewController.h
+//  MNDSearchViewController.h
 //  AsyncImageLoad
 //
 //  Created by Haldun Bayhantopcu on 01/12/13.
@@ -8,6 +8,6 @@
 
 #import <UIKit/UIKit.h>
 
-@interface MNDViewController : UIViewController
+@interface MNDSearchViewController : UITableViewController
 
 @end
