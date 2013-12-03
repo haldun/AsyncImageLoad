@@ -10,13 +10,19 @@
 
 @interface UIImageView (MNDAsyncLoad)
 
-- (void)mnd_setImageWithURL:(NSURL *)url;
-- (void)mnd_setImageWithURL:(NSURL *)url placeholderImage:(UIImage *)placeholderImage;
-- (void)mnd_setImageWithURL:(NSURL *)url placeholderImage:(UIImage *)placeholderImage
+- (void)setImageWithURL:(NSURL *)url;
+
+- (void)setImageWithURL:(NSURL *)url placeholderImage:(UIImage *)placeholderImage;
+
+- (void)setImageWithURL:(NSURL *)url
+       placeholderImage:(UIImage *)placeholderImage
+                success:(void (^)(NSURLRequest *request, NSHTTPURLResponse *response, UIImage *image))success;
+
+- (void)setImageWithURL:(NSURL *)url placeholderImage:(UIImage *)placeholderImage
                     success:(void (^)(NSURLRequest *request, NSHTTPURLResponse *response, UIImage *image))success
                     failure:(void (^)(NSURLRequest *request, NSHTTPURLResponse *response,
                                       NSError *error))failure;
 
-- (void)mnd_cancelImageLoad;
+- (void)cancelImageLoad;
 
 @end

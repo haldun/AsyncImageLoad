@@ -13,6 +13,8 @@
 
 @property (strong, nonatomic) NSArray *results;
 
+@property (strong, nonatomic) NSURLSession *session;
+
 @end
 
 @implementation MNDSearchViewController
@@ -37,6 +39,15 @@
   [task resume];
 }
 
+- (NSURLSession *)session
+{
+  if (!_session) {
+    NSURLSessionConfiguration *config = [NSURLSessionConfiguration defaultSessionConfiguration];
+    _session = [NSURLSession sessionWithConfiguration:config];
+  }
+  return _session;
+}
+
 #pragma mark - UITableViewDataSource
 
 - (NSInteger)numberOfSectionsInTableView:(UITableView *)tableView
@@ -55,21 +66,22 @@
   UITableViewCell *cell = [tableView dequeueReusableCellWithIdentifier:CellIdentifier forIndexPath:indexPath];
   NSDictionary *track = self.results[indexPath.row];
   cell.textLabel.text = track[@"trackName"];
-  cell.imageView.image = nil;
-  [cell.imageView mnd_setImageWithURL:[NSURL URLWithString:track[@"artworkUrl100"]]
-                     placeholderImage:nil
-                              success:^(NSURLRequest *request, NSHTTPURLResponse *response, UIImage *image) {
+  NSURL *imageURL = [NSURL URLWithString:track[@"artworkUrl100"]];
+  
+  __weak typeof(cell) weakCell = cell;
+  
+  [cell.imageView setImageWithURL:imageURL placeholderImage:nil success:^(NSURLRequest *request, NSHTTPURLResponse *response, UIImage *image) {
     dispatch_async(dispatch_get_main_queue(), ^{
-      cell.imageView.image = image;
-      [cell setNeedsLayout];
+      weakCell.imageView.image = image;
+      [weakCell setNeedsLayout];
     });
-  } failure:nil];
+  }];
   return cell;
 }
 
 - (void)tableView:(UITableView *)tableView didEndDisplayingCell:(UITableViewCell *)cell forRowAtIndexPath:(NSIndexPath *)indexPath
 {
-  [cell.imageView mnd_cancelImageLoad];
+  [cell.imageView cancelImageLoad];
 }
 
 #pragma mark - UISearchBarDelegate

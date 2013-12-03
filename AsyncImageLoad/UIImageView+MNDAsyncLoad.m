@@ -35,7 +35,7 @@ static char kMNDImageLoadTaskKey;
 
 @implementation UIImageView (MNDAsyncLoad)
 
-+ (NSURLSession *)mnd_sharedSession
++ (NSURLSession *)sharedSession
 {
   static NSURLSession *session = nil;
   static dispatch_once_t onceToken;
@@ -47,63 +47,73 @@ static char kMNDImageLoadTaskKey;
   return session;
 }
 
-- (void)mnd_setImageWithURL:(NSURL *)url
+- (void)setImageWithURL:(NSURL *)url
 {
-  [self mnd_setImageWithURL:url placeholderImage:nil];
+  [self setImageWithURL:url placeholderImage:nil];
 }
 
-- (void)mnd_setImageWithURL:(NSURL *)url placeholderImage:(UIImage *)placeholderImage
+- (void)setImageWithURL:(NSURL *)url placeholderImage:(UIImage *)placeholderImage
 {
-  [self mnd_setImageWithURL:url placeholderImage:placeholderImage success:nil failure:nil];
+  [self setImageWithURL:url placeholderImage:placeholderImage success:nil failure:nil];
 }
 
-- (void)mnd_setImageWithURL:(NSURL *)url
-           placeholderImage:(UIImage *)placeholderImage
-                    success:(void (^)(NSURLRequest *request, NSHTTPURLResponse *response, UIImage *image))success
-                    failure:(void (^)(NSURLRequest *request, NSHTTPURLResponse *response,
-                                      NSError *error))failure
+- (void)setImageWithURL:(NSURL *)url
+       placeholderImage:(UIImage *)placeholderImage
+                success:(void (^)(NSURLRequest *request, NSHTTPURLResponse *response, UIImage *image))success
 {
-  [self mnd_cancelImageLoad];
+  [self setImageWithURL:url placeholderImage:placeholderImage success:success failure:nil];
+}
+
+- (void)setImageWithURL:(NSURL *)url
+       placeholderImage:(UIImage *)placeholderImage
+                success:(void (^)(NSURLRequest *request, NSHTTPURLResponse *response, UIImage *image))success
+                failure:(void (^)(NSURLRequest *request, NSHTTPURLResponse *response, NSError *error))failure
+{
+  [self cancelImageLoad];
   
   NSMutableURLRequest *request = [NSMutableURLRequest requestWithURL:url];
   [request addValue:@"image/*" forHTTPHeaderField:@"Accept"];
   
   self.image = placeholderImage;
   self.mnd_imageLoadTask =
-    [[UIImageView mnd_sharedSession] dataTaskWithRequest:request
-                                       completionHandler:^(NSData *data, NSURLResponse *response, NSError *error) {
-                                         NSHTTPURLResponse *httpResponse = (NSHTTPURLResponse *)response;
-                                         
-                                         if (error) {
-                                           if (failure) {
-                                             failure(request, httpResponse, error);
-                                           }
-                                           return;
-                                         }
-                                         
-                                         if (httpResponse.statusCode != 200) {
-                                           if (failure) {
-                                             NSError *httpError = [NSError errorWithDomain:MNDAsyncLoadErrorDomain
-                                                                                      code:httpResponse.statusCode
-                                                                                  userInfo:nil];
-                                             failure(request, httpResponse, httpError);
-                                           }
-                                           return;
-                                         }
-                                        
-                                         UIImage *image = [UIImage imageWithData:data];
-                                           if (success) {
-                                             success(request, httpResponse, image);
-                                           } else {
-                                             dispatch_async(dispatch_get_main_queue(), ^{
-                                               self.image = image;
-                                             });
-                                           }
-                                       }];
+    [[UIImageView sharedSession] dataTaskWithRequest:request
+                                   completionHandler:^(NSData *data, NSURLResponse *response, NSError *error) {
+                                     if (![url isEqual:response.URL]) {
+                                       return;
+                                     }
+                                     
+                                     NSHTTPURLResponse *httpResponse = (NSHTTPURLResponse *)response;
+                                     
+                                     if (error) {
+                                       if (failure) {
+                                         failure(request, httpResponse, error);
+                                       }
+                                       return;
+                                     }
+
+                                     if (httpResponse.statusCode != 200) {
+                                       if (failure) {
+                                         NSError *httpError = [NSError errorWithDomain:MNDAsyncLoadErrorDomain
+                                                                                  code:httpResponse.statusCode
+                                                                              userInfo:nil];
+                                         failure(request, httpResponse, httpError);
+                                       }
+                                       return;
+                                     }
+
+                                     UIImage *image = [UIImage imageWithData:data];
+                                     if (success) {
+                                       success(request, httpResponse, image);
+                                     } else {
+                                       dispatch_async(dispatch_get_main_queue(), ^{
+                                         self.image = image;
+                                       });
+                                     }
+                                   }];
   [self.mnd_imageLoadTask resume];
 }
 
-- (void)mnd_cancelImageLoad
+- (void)cancelImageLoad
 {
   [self.mnd_imageLoadTask cancel];
   self.mnd_imageLoadTask = nil;
