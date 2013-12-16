@@ -86,7 +86,9 @@ static char kMNDImageLoadTaskKey;
                                      
                                      if (error) {
                                        if (failure) {
-                                         failure(request, httpResponse, error);
+                                         dispatch_async(dispatch_get_main_queue(), ^{
+                                           failure(request, httpResponse, error);
+                                         });
                                        }
                                        return;
                                      }
@@ -96,14 +98,18 @@ static char kMNDImageLoadTaskKey;
                                          NSError *httpError = [NSError errorWithDomain:MNDAsyncLoadErrorDomain
                                                                                   code:httpResponse.statusCode
                                                                               userInfo:nil];
-                                         failure(request, httpResponse, httpError);
+                                         dispatch_async(dispatch_get_main_queue(), ^{                                                                              
+                                           failure(request, httpResponse, httpError);
+                                         });
                                        }
                                        return;
                                      }
 
                                      UIImage *image = [UIImage imageWithData:data];
                                      if (success) {
-                                       success(request, httpResponse, image);
+                                       dispatch_async(dispatch_get_main_queue(), ^{
+                                         success(request, httpResponse, image);
+                                       });
                                      } else {
                                        dispatch_async(dispatch_get_main_queue(), ^{
                                          self.image = image;
